@@ -16,6 +16,7 @@ extern void uae_sem_destroy(uae_sem_t*);
 extern int uae_sem_trywait(uae_sem_t*);
 extern int uae_sem_trywait_delay(uae_sem_t*, int);
 extern void uae_sem_post(uae_sem_t*);
+extern void uae_sem_unpost(uae_sem_t*);
 extern void uae_sem_wait(uae_sem_t*t);
 extern void uae_sem_init(uae_sem_t*, int manual_reset, int initial_state);
 extern int uae_start_thread(const TCHAR *name, void (*f)(void *), void *arg, uae_thread_id *thread);
@@ -88,6 +89,26 @@ STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
 	retval = OSSignalSemaphore(sem->sem);
 	if ( retval < 0 ) {
 		printf("sem_post() failed");
+	}
+	return retval;
+#else
+    return -1;
+#endif
+}
+
+STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
+{
+#ifdef TESTSEM
+	int retval;
+
+	if ( ! sem->sem ) {
+		printf("Passed a NULL semaphore");
+		return -1;
+	}
+
+	retval = uae_sem_trywait(sem);
+	if ( retval < 0 ) {
+		printf("sem_unpost() failed");
 	}
 	return retval;
 #else
@@ -174,6 +195,11 @@ STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
     return sem_post (sem->sem);
 }
 
+STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
+{
+    return sem->sem = 0;
+}
+
 STATIC_INLINE int uae_sem_wait (uae_sem_t *sem)
 {
     return sem_wait (sem->sem);
@@ -206,6 +232,11 @@ STATIC_INLINE int uae_sem_destroy (uae_sem_t *sem)
 STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
 {
     return sem->sem == 0 ? -1 : sem_post (sem->sem);
+}
+
+STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
+{
+    return sem->sem == 0 ? -1 : sem->sem = 0;
 }
 
 STATIC_INLINE int uae_sem_wait (uae_sem_t *sem)
