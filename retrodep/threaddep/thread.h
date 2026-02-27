@@ -39,8 +39,6 @@ STATIC_INLINE void uae_wait_thread (uae_thread_id tid)
 /* FIXME: write using wiiu semaphore */
 #warning WIIU bad Hack rewrite me 
 
-#define TESTSEM 1
-
 #include <wiiu_pthread.h>
 #include <wiiu/os/semaphore.h>
 
@@ -48,111 +46,59 @@ typedef struct {
     OSSemaphore *sem;
 } uae_sem_t;
 
-STATIC_INLINE int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
+STATIC_INLINE void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
 {
-#ifdef TESTSEM
-	sem->sem = (OSSemaphore *) malloc(sizeof(OSSemaphore));
-	if ( sem->sem ) {
-		OSInitSemaphore(sem->sem,value);
-
-	} else {
-		printf("init sema failed\n");
-		return 1;
+	sem->sem = (OSSemaphore *)malloc(sizeof(OSSemaphore));
+	if (sem->sem) {
+		OSInitSemaphore(sem->sem, value);
 	}
-#else
-    return 0;
-#endif
 }
 
-STATIC_INLINE int uae_sem_destroy (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_destroy (uae_sem_t *sem)
 {
-#ifdef TESTSEM
-	if ( sem->sem ) {
+	if (sem->sem) {
 		free(sem->sem);
 	}
-    return 0;
-#else
-    return 0;
-#endif
 }
 
-STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_post (uae_sem_t *sem)
 {
-#ifdef TESTSEM
+	if (sem->sem) {
+		OSSignalSemaphore(sem->sem);
+	}
+}
+
+STATIC_INLINE void uae_sem_unpost (uae_sem_t *sem)
+{
+	if (sem->sem) {
+		sem->sem = 0;
+	}
+}
+
+STATIC_INLINE void uae_sem_wait (uae_sem_t *sem)
+{
 	int retval;
 
-	if ( ! sem->sem ) {
-		printf("Passed a NULL semaphore");
+	if (!sem->sem) {
 		return -1;
 	}
 
-	retval = OSSignalSemaphore(sem->sem);
-	if ( retval < 0 ) {
-		printf("sem_post() failed");
-	}
-	return retval;
-#else
-    return -1;
-#endif
-}
-
-STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
-{
-#ifdef TESTSEM
-	int retval;
-
-	if ( ! sem->sem ) {
-		printf("Passed a NULL semaphore");
-		return -1;
-	}
-
-	retval = uae_sem_trywait(sem);
-	if ( retval < 0 ) {
-		printf("sem_unpost() failed");
-	}
-	return retval;
-#else
-    return -1;
-#endif
-}
-
-STATIC_INLINE int uae_sem_wait (uae_sem_t *sem)
-{
-#ifdef TESTSEM
-	int retval;
-
-	if ( ! sem->sem ) {
-		printf("Passed a NULL semaphore");
-		return -1;
-	}
-
-	while ( ((retval = OSWaitSemaphore(sem->sem)) == -1)  ) {}
-	if ( retval < 0 ) {
-		printf("sem_wait() failed");
-	}
-	return retval;
-#else
-    return -1;
-#endif
+	while ((retval = OSWaitSemaphore(sem->sem)) == -1) {}
 }
 
 STATIC_INLINE int uae_sem_trywait_delay (uae_sem_t *sem, int millis)
 {
-#ifdef TESTSEM
 	int retval;
 
-	if ( ! sem->sem ) {
-		printf("Passed a NULL semaphore");
+	if (!sem->sem) {
 		return -1;
 	}
+
 	retval = 1;
-	if ( OSTryWaitSemaphore (sem->sem) == 0 ) {
+	if (OSTryWaitSemaphore(sem->sem) == 0) {
 		retval = 0;
 	}
 	return retval;
-#else
-    return -1;
-#endif
 }
 
 STATIC_INLINE int uae_sem_trywait (uae_sem_t *sem)
@@ -162,15 +108,11 @@ STATIC_INLINE int uae_sem_trywait (uae_sem_t *sem)
 
 STATIC_INLINE int uae_sem_getvalue (uae_sem_t *sem, int *sval)
 {
-#ifdef TESTSEM
-	if ( ! sem->sem ) {
-		printf("Passed a NULL semaphore");
+	if (!sem->sem) {
 		return -1;
 	}
-        return OSGetSemaphoreCount (sem->sem);
-#else
-    return -1;
-#endif
+
+	return OSGetSemaphoreCount(sem->sem);
 }
 
 #else /* WIIU */
@@ -183,26 +125,26 @@ typedef struct {
 } uae_sem_t;
 
 #ifndef USE_NAMED_SEMAPHORES
-int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value);
+void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value);
 
-STATIC_INLINE int uae_sem_destroy (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_destroy (uae_sem_t *sem)
 {
-    return sem_destroy (sem->sem);
+    sem_destroy (sem->sem);
 }
 
-STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_post (uae_sem_t *sem)
 {
-    return sem_post (sem->sem);
+    sem_post (sem->sem);
 }
 
-STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_unpost (uae_sem_t *sem)
 {
-    return sem->sem = 0;
+    sem->sem = 0;
 }
 
-STATIC_INLINE int uae_sem_wait (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_wait (uae_sem_t *sem)
 {
-    return sem_wait (sem->sem);
+    sem_wait (sem->sem);
 }
 
 STATIC_INLINE int uae_sem_trywait_delay(uae_sem_t *sem, int millis)
@@ -222,26 +164,26 @@ STATIC_INLINE int uae_sem_getvalue (uae_sem_t *sem, int *sval)
 
 #else
 
-int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value);
+void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value);
 
-STATIC_INLINE int uae_sem_destroy (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_destroy (uae_sem_t *sem)
 {
-    return sem->sem == 0 ? -1 : sem_close (sem->sem);
+    sem_close (sem->sem);
 }
 
-STATIC_INLINE int uae_sem_post (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_post (uae_sem_t *sem)
 {
-    return sem->sem == 0 ? -1 : sem_post (sem->sem);
+    sem_post (sem->sem);
 }
 
-STATIC_INLINE int uae_sem_unpost (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_unpost (uae_sem_t *sem)
 {
-    return sem->sem == 0 ? -1 : sem->sem = 0;
+    sem->sem = 0;
 }
 
-STATIC_INLINE int uae_sem_wait (uae_sem_t *sem)
+STATIC_INLINE void uae_sem_wait (uae_sem_t *sem)
 {
-    return sem->sem == 0 ? -1 : sem_wait (sem->sem);
+    sem_wait (sem->sem);
 }
 
 STATIC_INLINE int uae_sem_trywait_delay(uae_sem_t *sem, int millis)

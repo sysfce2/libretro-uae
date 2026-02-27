@@ -158,7 +158,7 @@ void uae_set_thread_priority (uae_thread_id *thread, int pri)
 #include <semaphore.h>
 
 #ifdef USE_NAMED_SEMAPHORES
-int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
+void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
 {
     char name[32];
     static int semno = 0;
@@ -168,19 +168,16 @@ int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
 
     if ((sem->sem = sem_open (name, O_CREAT, 0600, value)) != (sem_t *)SEM_FAILED)
        sem_unlink (name);
-    else {
+    else
        sem->sem = 0;
-       result = -1;
-    }
-    return result;
 }
 #else
-int uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
+void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value)
 {
     if (!sem || (sem && sem->sem))
-        return -1;
+        return;
     sem->sem = (sem_t*)calloc(1, sizeof(sem_t));
-    return sem_init (sem->sem, pshared, value);
+    sem_init (sem->sem, pshared, value);
 }
 #endif /* USE_NAMED_SEMAPHORES */
 
