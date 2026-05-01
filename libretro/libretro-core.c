@@ -5130,7 +5130,8 @@ void retro_init(void)
 
 void retro_deinit(void)
 {
-   leave_program();
+   if (save_state_file_size)
+      leave_program();
 
    /* Clean ZIP temp */
    if (!string_is_empty(retro_temp_directory) && path_is_directory(retro_temp_directory))
