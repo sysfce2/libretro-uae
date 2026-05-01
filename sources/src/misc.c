@@ -420,9 +420,11 @@ int target_cfgfile_load (struct uae_prefs *p, const TCHAR *filename, int type, i
 				_tcscpy(cname, p + 1);
 		}
 	}
+#ifndef __LIBRETRO__
 	if (type == 0 || type == 1) {
 		discard_prefs (p, 0);
 	}
+#endif
 	type2 = type;
 	if (type == 0 || type == 3) {
 		default_prefs (p, true, type);
