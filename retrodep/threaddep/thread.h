@@ -168,12 +168,14 @@ void uae_sem_init (uae_sem_t *sem, int pshared, unsigned int value);
 
 STATIC_INLINE void uae_sem_destroy (uae_sem_t *sem)
 {
-    sem_close (sem->sem);
+    if (sem->sem)
+       sem_close (sem->sem);
 }
 
 STATIC_INLINE void uae_sem_post (uae_sem_t *sem)
 {
-    sem_post (sem->sem);
+    if (sem->sem)
+       sem_post (sem->sem);
 }
 
 STATIC_INLINE void uae_sem_unpost (uae_sem_t *sem)
@@ -183,7 +185,8 @@ STATIC_INLINE void uae_sem_unpost (uae_sem_t *sem)
 
 STATIC_INLINE void uae_sem_wait (uae_sem_t *sem)
 {
-    sem_wait (sem->sem);
+    if (sem->sem)
+       sem_wait (sem->sem);
 }
 
 STATIC_INLINE int uae_sem_trywait_delay(uae_sem_t *sem, int millis)
