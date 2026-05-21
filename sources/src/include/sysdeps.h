@@ -632,7 +632,9 @@ extern bool use_long_double;
 #define _tcsncmp strncmp
 #define _tstol atol
 #define _totupper toupper
+#ifndef _stprintf
 #define _stprintf sprintf
+#endif
 #define _tcscat strcat
 #ifndef _tcsicmp
 #define _tcsicmp strcasecmp
